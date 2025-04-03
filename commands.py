@@ -13,6 +13,7 @@ COMMAND_SUBACCOUNT_CREATE = "subaccount create"
 
 COMMAND_WITHDRAW = "withdraw"
 COMMAND_DEPOSIT = "deposit"
+COMMAND_LOAD_DEPOSIT_ADDRESS = "deposit_address"
 
 
 class OptionalArgumentValue(object):
@@ -171,6 +172,31 @@ class Commands(object):
                         "creates a subaccount",
                     )
                 ],
+            )
+        )
+
+        self.addCommand(
+            Command(
+                "withdraw",
+                [
+                    CommandArgument("address", "str"),
+                    CommandArgument("currency", "str"),
+                    CommandArgument("amount", "str"),
+                    CommandArgument("entity_id", "int", optional=True, skip=True),
+                ],
+                "Withdrawal method",
+                [],
+            )
+        )
+
+        self.addCommand(
+            Command(
+                "deposit_address",
+                [
+                    CommandArgument("reference_str", "str"),
+                ],
+                "Loads deposit address",
+                [],
             )
         )
 

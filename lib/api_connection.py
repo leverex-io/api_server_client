@@ -2,11 +2,8 @@ import websockets
 import json
 import asyncio
 import logging
-from decimal import Decimal
 
-from typing import Callable
 from SDK.leverex_core.login_connection import LoginServiceClientWS
-from SDK.leverex_core.api_connection import generateReferenceId
 
 urls = {
     "devbrown": {
@@ -64,11 +61,9 @@ class AdminApiConnection(object):
 
     async def authorize(self, token):
         auth_request = {
-            # "request": "authorize",
             "authorize": {"token": token["access_token"]},
         }
         self.access_token = token
-        print(json.dumps(auth_request))
         await self.websocket.send(json.dumps(auth_request))
 
     async def connected(self):
@@ -101,7 +96,6 @@ class AdminApiConnection(object):
         try:
             # get access token
             accessToken = await self.getAccessToken()
-            print(accessToken)
             # set admin custom CA & connect to admin api
             # custom_ca_context = ssl.create_default_context(cafile="leverex_local.crt")
             async with websockets.connect(
@@ -122,7 +116,7 @@ class AdminApiConnection(object):
             import traceback
 
             traceback.print_exc()
-            print(f"connection failed with error: {urls[env]}")
+            print(f"connection failed with error: {urls[self.env]}")
             loop = asyncio.get_running_loop()
             loop.stop()
             return
@@ -160,91 +154,23 @@ class AdminApiConnection(object):
         if done:
             del self._callbacks[key]
 
-    ## getters ##
-    async def getIncompleteSessions(self, product, callback: Callable = None):
-        refId = generateReferenceId()
-        msg = {
-            "request": "get_incomplete_sessions",
-            "data": {"product_name": product, "reference": refId},
-        }
-        self.queueCallback(refId, callback)
-        await self.websocket.send(json.dumps(msg))
-
-    async def getSessionImSummary(
-        self, sessionId, novationId, callback: Callable = None
-    ):
-        refId = generateReferenceId()
-        callbackCount = 1
-        msg = {
-            "request": "im_summary",
-            "data": {"session_id": sessionId, "reference": refId},
-        }
-        if novationId:
-            msg["data"]["account_id"] = str(novationId)
-            callbackCount += 1
-
-        self.queueCallback(refId, callback, callbackCount)
-        await self.websocket.send(json.dumps(msg))
-
-    async def getSessionInfo(
-        self, sessionId: str, product: str, callback: Callable = None
-    ):
-        refId = generateReferenceId()
-        msg = {
-            "request": "get_damaged_session_info",
-            "data": {
-                "product_name": product,
-                "session_id": sessionId,
-                "reference": refId,
-            },
-        }
-        self.queueCallback(refId, callback)
-        await self.websocket.send(json.dumps(msg))
-
-    async def getChyrons(self, callback: Callable = None):
-        refId = generateReferenceId()
-        msg = {
-            "request": "load_chyrons",
-            "data": {"ignore_time": True, "only_enabled": False, "reference": refId},
-        }
-        self.queueCallback(refId, callback)
-        await self.websocket.send(json.dumps(msg))
-
-    async def loadUsers(self, callback: Callable = None):
-        refId = generateReferenceId()
-        msg = {
-            "request": "load_users",
-            "data": {"entity_id": 0, "email": "", "reference": refId},
-        }
-        self.queueCallback(refId, callback)
-        await self.websocket.send(json.dumps(msg))
-
-    async def getNumberOfAccounts(self):
-        msg = {"request": "number_of_accounts"}
-        await self.websocket.send(json.dumps(msg))
-
-    ## subscriptions ##
-    async def subscribeActiveSessionInfo(self):
-        msg = {"request": "active_sessions_info"}
-        await self.websocket.send(json.dumps(msg))
-
-    async def subscribeLeverexBalances(self):
-        msg = {"request": "leverex_balances"}
-        await self.websocket.send(json.dumps(msg))
-
     async def createSubAccount(self, email):
         msg = {"create_sub_account": email}
-        print(json.dumps(msg))
         await self.websocket.send(json.dumps(msg))
 
-    async def withdraw(self, email):
-        msg = {"withdraw": email}
-        print(json.dumps(msg))
+    async def withdraw(self, address, currency, amount, entity_id=None):
+        msg = {
+            "withdraw_liquid": {
+                "address": address,
+                "currency": currency,
+                "amount": amount,
+                "entity_id": entity_id or 0,
+            }
+        }
         await self.websocket.send(json.dumps(msg))
 
     async def deposit(self, email):
         msg = {"deposit": email}
-        print(json.dumps(msg))
         await self.websocket.send(json.dumps(msg))
 
     async def subscribeImInfo(self):
@@ -256,98 +182,12 @@ class AdminApiConnection(object):
         msg = {"load_account_balance": {"entity_id": entityId}}
         await self.websocket.send(json.dumps(msg))
 
-    ## requests ##
-    async def fixSession(
-        self,
-        sessionId: str,
-        product: str,
-        scenario: str,
-        price: Decimal,
-        callback: Callable = None,
-    ):
-        refId = generateReferenceId()
-        msg = {
-            "request": "revert_damaged_session",
-            "data": {
-                "product_name": product,
-                "session_id": sessionId,
-                "scenario": scenario,
-                "reference": refId,
-            },
-        }
-        if price != 0:
-            msg["data"]["closing_price"] = str(price)
-
-        self.queueCallback(refId, callback)
-        await self.websocket.send(json.dumps(msg))
-
-    async def shutdownSession(self, product, callback: Callable = None):
-        refId = generateReferenceId()
-        msg = {
-            "request": "shutdown_session",
-            "data": {"product_name": product, "reference": refId},
-        }
-        self.queueCallback(refId, callback)
-        await self.websocket.send(json.dumps(msg))
-
-    async def forceStartNewSession(
-        self, product, hard: bool, callback: Callable = None
-    ):
-        refId = generateReferenceId()
-        msg = {
-            "request": "force_new_session",
-            "data": {"product_name": product, "hard": hard, "reference": refId},
-        }
-        self.queueCallback(refId, callback)
-        await self.websocket.send(json.dumps(msg))
-
-    async def createChyron(
-        self,
-        priority: int,
-        message: str,
-        start: int,
-        end: int,
-        callback: Callable = None,
-    ):
-        refId = generateReferenceId()
-        msg = {
-            "request": "create_chyron",
-            "data": {
-                "on": True,
-                "priority": priority,
-                "message": message,
-                "start": start,
-                "end": end,
-                "reference": refId,
-            },
-        }
-        self.queueCallback(refId, callback)
-        await self.websocket.send(json.dumps(msg))
-
-    async def updateChyron(
-        self, cId, on, prio, start, end, message: str = None, callback: Callable = None
-    ):
-        refId = generateReferenceId()
-        msg = {
-            "request": "modify_chyron",
-            "data": {
-                "id": cId,
-                "on": on,
-                "priority": prio,
-                "start": start,
-                "end": end,
-                "reference": refId,
-            },
-        }
-        if message:
-            msg["data"]["message"] = message
-
-        self.queueCallback(refId, callback)
+    async def load_deposit_address(self, ref_str):
+        msg = {"load_deposit_address": {"reference": ref_str}}
         await self.websocket.send(json.dumps(msg))
 
     ## handle replies ##
     async def processResponse(self, data):
-        print(f"RESPONSE: {data}")
         replyType = data
         reply = {}
         if "data" in data:
@@ -371,6 +211,12 @@ class AdminApiConnection(object):
 
         elif "account_created" in data:
             await self.listener.on_subaccount_create(data["account_created"])
+
+        elif "withdraw_liquid" in data:
+            await self.listener.on_withdraw(data["withdraw_liquid"])
+
+        elif "load_deposit_address" in data:
+            await self.listener.on_load_deposit_address(data["load_deposit_address"])
 
         elif "reference" in data:
             refId = data["reference"]

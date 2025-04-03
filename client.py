@@ -12,7 +12,10 @@ from lib.announcements import Announcements
 from lib.cash import CashMetrics
 
 from commands import (
+    COMMAND_DEPOSIT,
+    COMMAND_LOAD_DEPOSIT_ADDRESS,
     COMMAND_SUBACCOUNT_CREATE,
+    COMMAND_WITHDRAW,
     Commands,
     COMMAND_EXIT,
 )
@@ -67,6 +70,16 @@ class BrownClient(object):
         elif commandCode == COMMAND_SUBACCOUNT_CREATE:
             await self.subaccount_create(*args)
 
+        # subaccount
+        elif commandCode == COMMAND_WITHDRAW:
+            await self.withdraw(*args)
+
+        elif commandCode == COMMAND_DEPOSIT:
+            await self.deposit(*args)
+
+        elif commandCode == COMMAND_LOAD_DEPOSIT_ADDRESS:
+            await self.load_deposit_address(*args)
+
         else:
             print(f"unhandled command: {request}")
 
@@ -78,15 +91,13 @@ class BrownClient(object):
 
     async def on_subaccount_create(self, data):
         print(data)
-        pass
 
     ## withdrawal ##
-    async def withdraw(self, something):
-        pass
+    async def withdraw(self, address, currency, amount, entity_id):
+        await self.connection.withdraw(address, currency, amount, entity_id)
 
     async def on_withdraw(self, data):
         print(data)
-        pass
 
     # deposit
     async def deposit(self, something):
@@ -94,12 +105,16 @@ class BrownClient(object):
 
     async def on_deposit(self, data):
         print(data)
-        pass
+
+    async def load_deposit_address(self, ref_str):
+        await self.connection.load_deposit_address(ref_str)
+
+    async def on_load_deposit_address(self, data):
+        print(data)
 
     ## reply handlers ##
     async def onLoginSuccess(self):
         # subsc ibe to various notifications
-        # await self.connection.createSubAccount("marek@bronowicki.com")
         # await self.connection.subscribeActiveSessionInfo()
         # await self.getSessions("damaged")
         # await self.connection.getNumberOfAccounts()
