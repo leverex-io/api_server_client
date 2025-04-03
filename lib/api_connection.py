@@ -1,5 +1,4 @@
 import websockets
-import ssl
 import json
 import asyncio
 import logging
@@ -104,7 +103,7 @@ class AdminApiConnection(object):
             accessToken = await self.getAccessToken()
             print(accessToken)
             # set admin custom CA & connect to admin api
-            custom_ca_context = ssl.create_default_context(cafile="leverex_local.crt")
+            # custom_ca_context = ssl.create_default_context(cafile="leverex_local.crt")
             async with websockets.connect(
                 urls[self.env]["api"],  # ssl=custom_ca_context
             ) as self.websocket:
