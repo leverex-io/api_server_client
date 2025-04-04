@@ -14,6 +14,7 @@ from lib.cash import CashMetrics
 from commands import (
     COMMAND_DEPOSIT,
     COMMAND_LOAD_DEPOSIT_ADDRESS,
+    COMMAND_LOAD_SUB_ACCOUNTS,
     COMMAND_SUBACCOUNT_CREATE,
     COMMAND_WITHDRAW,
     Commands,
@@ -79,6 +80,8 @@ class BrownClient(object):
 
         elif commandCode == COMMAND_LOAD_DEPOSIT_ADDRESS:
             await self.load_deposit_address(*args)
+        elif commandCode == COMMAND_LOAD_SUB_ACCOUNTS:
+            await self.load_sub_accounts(*args)
 
         else:
             print(f"unhandled command: {request}")
@@ -110,6 +113,12 @@ class BrownClient(object):
         await self.connection.load_deposit_address(ref_str)
 
     async def on_load_deposit_address(self, data):
+        print(data)
+
+    async def load_sub_accounts(self, ref_str):
+        await self.connection.load_sub_accounts(ref_str)
+
+    async def on_load_sub_accounts(self, data):
         print(data)
 
     ## reply handlers ##

@@ -186,6 +186,10 @@ class AdminApiConnection(object):
         msg = {"load_deposit_address": {"reference": ref_str}}
         await self.websocket.send(json.dumps(msg))
 
+    async def load_sub_accounts(self, ref_str):
+        msg = {"load_sub_accounts": ref_str}
+        await self.websocket.send(json.dumps(msg))
+
     ## handle replies ##
     async def processResponse(self, data):
         replyType = data
@@ -217,6 +221,9 @@ class AdminApiConnection(object):
 
         elif "load_deposit_address" in data:
             await self.listener.on_load_deposit_address(data["load_deposit_address"])
+
+        elif "load_sub_accounts" in data:
+            await self.listener.on_load_sub_accounts(data["load_sub_accounts"])
 
         elif "reference" in data:
             refId = data["reference"]
