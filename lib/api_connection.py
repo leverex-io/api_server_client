@@ -30,12 +30,13 @@ class RequestCallback(object):
 
 
 class AdminApiConnection(object):
-    def __init__(self, env):
+    def __init__(self, env, key=None):
         self.env = env
         self.websocket = None
         self.access_token = None
         self.listener = None
         self.loginStatus = False
+        self.key = key
         self._callbacks = {}
 
         if env not in urls:
@@ -48,7 +49,7 @@ class AdminApiConnection(object):
         print("logging in...")
 
         loginClient = LoginServiceClientWS(
-            None,
+            self.key,
             urls[self.env]["login"],
             aeid_endpoint=urls[self.env]["aeid"],
             dump_communication=True,
@@ -80,7 +81,7 @@ class AdminApiConnection(object):
 
             # cycle token with login server
             loginClient = LoginServiceClientWS(
-                None, urls[self.env]["login"], aeid_endpoint=urls[self.env]["aeid"]
+                self.key, urls[self.env]["login"], aeid_endpoint=urls[self.env]["aeid"]
             )
             access_token = await loginClient.update_access_token(
                 self.access_token["access_token"]

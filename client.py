@@ -27,13 +27,14 @@ theOneProduct = "xbtusd_rf"
 
 
 class BrownClient(object):
-    def __init__(self, env):
-        self.connection = AdminApiConnection(env)
+    def __init__(self, env, key=None):
+        self.connection = AdminApiConnection(env, key)
         self.sessionMap = SessionMap()
         self.commands = Commands()
         self.announcements = Announcements()
         self.cashMetrics = CashMetrics()
         self.numAccounts = None
+        self.key = key
 
     ## asyncio entry point ##
     async def run(self):
@@ -147,10 +148,15 @@ if __name__ == "__main__":
         type=str,
         help="enviroment to connect to (devbrown/devprem/dev/uat/prod)",
     )
+    parser.add_argument(
+        "--key",
+        type=str,
+        help="Key file for login over apikey (without providing a key it will show a QR code)",
+    )
     args = parser.parse_args()
 
     try:
-        client = BrownClient(args.env)
+        client = BrownClient(args.env, args.key)
         asyncio.run(client.run())
     except Exception:
         print("exiting...")
